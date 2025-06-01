@@ -1,0 +1,157 @@
+type UserRole = 
+ variant {
+   BarangayOfficial;
+   Citizen;
+   HeadBarangay;
+   HeadPolice;
+   Police;
+ };
+type User = 
+ record {
+   barangay: opt text;
+   createdAt: int;
+   department: opt text;
+   email: text;
+   id: text;
+   isActive: bool;
+   name: text;
+   role: UserRole;
+ };
+type Result_1 = 
+ variant {
+   err: text;
+   ok: text;
+ };
+type Result = 
+ variant {
+   err: text;
+   ok;
+ };
+type ReportType = 
+ variant {
+   Corruption;
+   Garbage;
+   NoiseComplaint;
+   Other: text;
+   Pothole;
+   StreetLight;
+   Theft;
+   TrafficViolation;
+ };
+type ReportStatus = 
+ variant {
+   Escalated;
+   InProgress;
+   Resolved;
+   Submitted;
+   UnderReview;
+ };
+type Report = 
+ record {
+   assignedTo: opt text;
+   createdAt: int;
+   description: text;
+   id: text;
+   isAnonymous: bool;
+   location: Location;
+   mediaUrls: vec text;
+   reportType: ReportType;
+   status: ReportStatus;
+   submittedBy: text;
+   title: text;
+   updatedAt: int;
+ };
+type Proposal = 
+ record {
+   barangay: text;
+   budget: nat;
+   createdAt: int;
+   deadline: int;
+   description: text;
+   id: text;
+   proposedBy: text;
+   status: variant {
+             Approved;
+             Completed;
+             InProgress;
+             Pending;
+             Rejected;
+           };
+   title: text;
+   votes: vec record {
+                text;
+                bool;
+              };
+ };
+type Location = 
+ record {
+   address: text;
+   barangay: text;
+   latitude: float64;
+   longitude: float64;
+ };
+type Announcement = 
+ record {
+   author: text;
+   content: text;
+   createdAt: int;
+   id: text;
+   isActive: bool;
+   targetAudience: variant {
+                     All;
+                     Barangay: text;
+                     Police;
+                   };
+   title: text;
+ };
+service : {
+  assignReport: (reportId: text, assignedTo: text, assignedBy: text) ->
+   (Result);
+  createAnnouncement: (title: text, content: text, author: text,
+   targetAudience: variant {
+                     All;
+                     Barangay: text;
+                     Police;
+                   }) -> (Result_1);
+  createProposal: (title: text, description: text, proposedBy: text,
+   barangay: text, budget: nat, deadline: int) -> (Result_1);
+  getAllAnnouncements: () -> (vec Announcement) query;
+  getAllProposals: () -> (vec Proposal) query;
+  getAllReports: () -> (vec Report) query;
+  getAllUsers: () -> (vec User) query;
+  getAnnouncementsByTarget: (target: variant {
+                                       All;
+                                       Barangay: text;
+                                       Police;
+                                     }) -> (vec Announcement) query;
+  getManilaBarangays: () -> (vec text) query;
+  getPoliceStations: () -> (vec text) query;
+  getProposal: (proposalId: text) -> (opt Proposal) query;
+  getProposalsByBarangay: (barangay: text) -> (vec Proposal) query;
+  getReport: (reportId: text) -> (opt Report) query;
+  getReportStatsByBarangay: (barangay: text) ->
+   (record {
+      inProgress: nat;
+      resolved: nat;
+      submitted: nat;
+      total: nat;
+    }) query;
+  getReportsByBarangay: (barangay: text) -> (vec Report) query;
+  getReportsByStatus: (status: ReportStatus) -> (vec Report) query;
+  getSystemInfo: () ->
+   (record {
+      totalAnnouncements: nat;
+      totalProposals: nat;
+      totalReports: nat;
+      totalUsers: nat;
+    }) query;
+  getUser: (userId: text) -> (opt User) query;
+  registerUser: (name: text, email: text, role: UserRole, department:
+   opt text, barangay: opt text) -> (Result_1);
+  submitReport: (title: text, description: text, reportType: ReportType,
+   location: Location, submittedBy: text, mediaUrls: vec text, isAnonymous:
+   bool) -> (Result_1);
+  updateReportStatus: (reportId: text, newStatus: ReportStatus, updatedBy:
+   text) -> (Result);
+  voteOnProposal: (proposalId: text, userId: text, vote: bool) -> (Result);
+}

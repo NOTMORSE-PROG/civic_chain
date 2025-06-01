@@ -17,7 +17,13 @@
     },
     "ic": {
       "providers": ["https://ic0.app"],
-      "type": "persistent"
+      "type": "persistent",
+      "ingress_expiry": 600
+    },
+    "testnet": {
+      "providers": ["https://ic0.testnet.dfinity.network"],
+      "type": "persistent",
+      "ingress_expiry": 600
     }
   }
 }
