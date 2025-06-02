@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { useAuth } from '../hooks/useAuth.jsx';
-import { civicchainActor } from '../utils/icp';
+import { useAuth } from '../contexts/AuthContext';
+import { getActor } from '../utils/icp';
 import { 
   Plus, 
   Megaphone, 
@@ -42,7 +42,8 @@ const Announcements = () => {
 
   const loadAnnouncements = async () => {
     try {
-      const result = await civicchainActor.getAllAnnouncements();
+      const actor = await getActor();
+      const result = await actor.getAllAnnouncements();
       setAnnouncements(result);
     } catch (error) {
       console.error('Error loading announcements:', error);
@@ -54,7 +55,8 @@ const Announcements = () => {
   const handleCreateAnnouncement = async (e) => {
     e.preventDefault();
     try {
-      const result = await civicchainActor.createAnnouncement(
+      const actor = await getActor();
+      const result = await actor.createAnnouncement(
         newAnnouncement.title,
         newAnnouncement.content,
         newAnnouncement.type,

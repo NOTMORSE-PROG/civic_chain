@@ -13,9 +13,17 @@ type User =
    department: opt text;
    email: text;
    id: text;
+   idNumber: opt text;
    isActive: bool;
    name: text;
+   passwordHash: text;
+   phoneNumber: text;
    role: UserRole;
+ };
+type Result_2 = 
+ variant {
+   err: text;
+   ok: User;
  };
 type Result_1 = 
  variant {
@@ -105,7 +113,7 @@ type Announcement =
    title: text;
  };
 service : {
-  assignReport: (reportId: text, assignedTo: text, assignedBy: text) ->
+  assignReport: (reportId: text, assignedTo: text, _assignedBy: text) ->
    (Result);
   createAnnouncement: (title: text, content: text, author: text,
    targetAudience: variant {
@@ -146,12 +154,17 @@ service : {
       totalUsers: nat;
     }) query;
   getUser: (userId: text) -> (opt User) query;
-  registerUser: (name: text, email: text, role: UserRole, department:
-   opt text, barangay: opt text) -> (Result_1);
+  initializeTestUsers: () -> ();
+  login: (email: text, password: text, role: UserRole) -> (Result_2);
+  logoutUser: () -> (Result);
+  registerUser: (name: text, email: text, password: text, role: UserRole,
+   department: opt text, barangay: opt text, phoneNumber: text, idNumber:
+   opt text) -> (Result_1);
+  setup: () -> ();
   submitReport: (title: text, description: text, reportType: ReportType,
    location: Location, submittedBy: text, mediaUrls: vec text, isAnonymous:
    bool) -> (Result_1);
-  updateReportStatus: (reportId: text, newStatus: ReportStatus, updatedBy:
+  updateReportStatus: (reportId: text, newStatus: ReportStatus, _updatedBy:
    text) -> (Result);
   voteOnProposal: (proposalId: text, userId: text, vote: bool) -> (Result);
 }

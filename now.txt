@@ -1,0 +1,67 @@
+cd /mnt/c/Users/ADMIN/OneDrive/Documents/icp/andreicondino2-project
+INTERNET IDENTITY: 2775197
+Citizens:
+John Doe
+Email: john.doe@gmail.com
+Password: password123
+Phone: 09123456789
+Role: Citizen
+Jane Smith
+Email: jane.smith@gmail.com
+Password: password123
+Phone: 09234567890
+Role: Citizen
+Police Officials:
+Mike Johnson
+Email: mike.johnson@manilapd.gov.ph
+Password: password123
+Phone: 09345678901
+ID Number: MPD-12345
+Station: Station 1
+Role: Police
+Sarah Williams
+Email: sarah.williams@manilapd.gov.ph
+Password: password123
+Phone: 09456789012
+ID Number: MPD-12346
+Station: Station 2
+Role: Police
+Barangay Officials:
+Maria Santos
+Email: maria.santos@barangay.gov.ph
+Password: password123
+Phone: 09567890123
+ID Number: BRGY-12345
+Barangay: Ermita
+Role: BarangayOfficial
+Pedro Cruz
+Email: pedro.cruz@barangay.gov.ph
+Password: password123
+Phone: 09678901234
+ID Number: BRGY-12346
+Barangay: Intramuros
+Role: BarangayOfficial
+Department Heads:
+Robert Garcia
+Email: robert.garcia@manilapd.gov.ph
+Password: password123
+Phone: 09789012345
+ID Number: MPD-12347
+Station: Station 1
+Role: HeadPolice
+Elena Reyes
+Email: elena.reyes@barangay.gov.ph
+Password: password123
+Phone: 09890123456
+ID Number: BRGY-12347
+Barangay: Ermita
+Role: HeadBarangay
+
+
+dfx stop
+rm -rf .dfx
+rm -rf dist
+rm -f canister_ids.json
+dfx start --clean --background
+dfx canister create --all
+dfx deploy

@@ -1,7 +1,0 @@
-// Version: 1.0.0
-actor {
-  stable var nextAnnouncementId : Nat;
-  stable var nextProposalId : Nat;
-  stable var nextReportId : Nat;
-  stable var nextUserId : Nat
-};

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { useAuth } from '../hooks/useAuth.jsx';
-import { civicchainActor, manilaBarangays } from '../utils/icp';
+import { useAuth } from '../contexts/AuthContext';
+import { getActor, manilaBarangays } from '../utils/icp';
 import { 
   BarChart3, 
   TrendingUp, 
@@ -32,7 +32,8 @@ const Analytics = () => {
 
   const loadSystemAnalytics = async () => {
     try {
-      const result = await civicchainActor.getSystemInfo();
+      const actor = await getActor();
+      const result = await actor.getSystemInfo();
       setAnalytics(result);
     } catch (error) {
       console.error('Error loading analytics:', error);
@@ -45,7 +46,8 @@ const Analytics = () => {
     if (!selectedBarangay) return;
     
     try {
-      const result = await civicchainActor.getReportStatsByBarangay(selectedBarangay);
+      const actor = await getActor();
+      const result = await actor.getReportStatsByBarangay(selectedBarangay);
       setBarangayStats(result);
     } catch (error) {
       console.error('Error loading barangay stats:', error);

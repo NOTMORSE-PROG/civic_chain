@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { useAuth } from '../hooks/useAuth.jsx';
-import { civicchainActor } from '../utils/icp';
+import { useAuth } from '../contexts/AuthContext';
+import { getActor } from '../utils/icp';
 import { 
   Plus, 
   Vote, 
@@ -40,7 +40,8 @@ const Proposals = () => {
 
   const loadProposals = async () => {
     try {
-      const result = await civicchainActor.getAllProposals();
+      const actor = await getActor();
+      const result = await actor.getAllProposals();
       setProposals(result);
     } catch (error) {
       console.error('Error loading proposals:', error);
@@ -52,7 +53,8 @@ const Proposals = () => {
   const handleCreateProposal = async (e) => {
     e.preventDefault();
     try {
-      const result = await civicchainActor.createProposal(
+      const actor = await getActor();
+      const result = await actor.createProposal(
         newProposal.title,
         newProposal.description,
         newProposal.category,
@@ -75,7 +77,8 @@ const Proposals = () => {
 
   const handleVote = async (proposalId, vote) => {
     try {
-      const result = await civicchainActor.voteOnProposal(proposalId, vote, user.id);
+      const actor = await getActor();
+      const result = await actor.voteOnProposal(proposalId, vote, user.id);
       if ('ok' in result) {
         loadProposals();
       } else {

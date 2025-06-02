@@ -12,32 +12,42 @@
   .btn-primary {
     @apply bg-civic-blue text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors;
   }
-  
+
   .btn-secondary {
     @apply bg-gray-200 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-300 transition-colors;
   }
-  
+
   .card {
     @apply bg-white rounded-lg shadow-md p-6;
   }
-  
+
   .input-field {
     @apply w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-civic-blue;
   }
-  
+
   .status-submitted {
     @apply bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full text-sm;
   }
-  
+
   .status-inprogress {
     @apply bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-sm;
   }
-  
+
   .status-resolved {
     @apply bg-green-100 text-green-800 px-2 py-1 rounded-full text-sm;
   }
-  
+
   .status-underreview {
     @apply bg-purple-100 text-purple-800 px-2 py-1 rounded-full text-sm;
+  }
+}
+
+@layer utilities {
+  .civic-blue {
+    background-color: #0052cc;
+  }
+
+  .civic-green {
+    background-color: #00796b;
   }
 }

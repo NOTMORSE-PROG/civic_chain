@@ -1,0 +1,10 @@
+{
+  "assets": [
+    {
+      "match": "**/*",
+      "security_policy": "standard"
+    }
+  ],
+  "disable_security_policy_warning": true
+}
+

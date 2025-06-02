@@ -7,7 +7,18 @@
     },
     "civicchain_frontend": {
       "type": "assets",
-      "source": ["dist/"]
+      "source": ["dist/"],
+      "dependencies": ["civicchain_backend"],
+      "build": ["npm run build"],
+      "asset_security": {
+        "policies": [
+          {
+            "match": "**/*",
+            "type": "standard"
+          }
+        ],
+        "disable_policy_warning": true
+      }
     }
   },
   "networks": {

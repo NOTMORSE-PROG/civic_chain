@@ -1,13 +1,13 @@
-import Debug "mo:base/Debug";
 import Array "mo:base/Array";
 import Buffer "mo:base/Buffer";
+import Char "mo:base/Char";
 import HashMap "mo:base/HashMap";
-import Text "mo:base/Text";
-import Time "mo:base/Time";
 import Int "mo:base/Int";
 import Iter "mo:base/Iter";
-import Option "mo:base/Option";
+import Nat32 "mo:base/Nat32";
 import Result "mo:base/Result";
+import Text "mo:base/Text";
+import Time "mo:base/Time";
 
 actor CivicChain {
     // Types
@@ -65,6 +65,9 @@ actor CivicChain {
         role: UserRole;
         name: Text;
         email: Text;
+        passwordHash: Text; // Store password hash, not plaintext
+        phoneNumber: Text; // Added phone number field
+        idNumber: ?Text; // Added ID number field (optional for citizens)
         department: ?Text; // For police
         barangay: ?Text; // For barangay officials
         isActive: Bool;
@@ -137,25 +140,95 @@ actor CivicChain {
         prefix # Int.toText(counter)
     };
 
-    // User Management
-    public func registerUser(name: Text, email: Text, role: UserRole, department: ?Text, barangay: ?Text): async Result.Result<Text, Text> {
-        let userId = generateId("user_", nextUserId);
-        nextUserId += 1;
-
-        let user: User = {
-            id = userId;
-            role = role;
-            name = name;
-            email = email;
-            department = department;
-            barangay = barangay;
-            isActive = true;
-            createdAt = Time.now();
+    // Simple password hashing function (for demonstration - in production use a proper hashing library)
+    private func hashPassword(password: Text): Text {
+        var hash: Nat32 = 0;
+        for (char in password.chars()) {
+            let charCode = Char.toNat32(char);
+            hash := hash +% charCode;
+            hash := hash *% 31;
         };
-
-        users.put(userId, user);
-        #ok(userId)
+        Nat32.toText(hash)
     };
+
+    // User Management
+    public func registerUser(
+    name: Text, 
+    email: Text, 
+    password: Text, 
+    role: UserRole, 
+    department: ?Text, 
+    barangay: ?Text,
+    phoneNumber: Text,
+    idNumber: ?Text
+    ): async Result.Result<Text, Text> {
+    
+    let normalizedEmail = Text.toLowercase(email);
+
+    // Check if email already exists
+    let existingUser = Array.find(
+        Iter.toArray(users.vals()), 
+        func(u: User): Bool { Text.toLowercase(u.email) == normalizedEmail }
+    );
+    
+    if (existingUser != null) {
+        return #err("Email already registered");
+    };
+
+    // Validate phone number format: Must be 11 digits and start with "09"
+    if (not Text.startsWith(phoneNumber, #text("09")) or Text.size(phoneNumber) != 11) {
+        return #err("Invalid phone number. It must start with '09' and be 11 digits.");
+    };
+
+    // Role-specific ID validation
+    switch (role) {
+        case (#Police) {
+            switch (idNumber) {
+                case null { return #err("Police ID number is required."); };
+                case (?id) {
+                    if (not Text.startsWith(id, #text("MPD-")) or Text.size(id) != 9) {
+                        return #err("Invalid Police ID format. Must be 'MPD-12345'");
+                    };
+                };
+            };
+        };
+        case (#BarangayOfficial) {
+            switch (idNumber) {
+                case null { return #err("Barangay ID number is required."); };
+                case (?id) {
+                    if (not Text.startsWith(id, #text("BRGY-")) or Text.size(id) != 10) {
+                        return #err("Invalid Barangay ID format. Must be 'BRGY-12345'");
+                    };
+                };
+            };
+        };
+        case (_) {}; // No ID validation for other roles
+    };
+
+    let userId = generateId("user_", nextUserId);
+    nextUserId += 1;
+
+    let passwordHash = hashPassword(password);
+
+    let newUser: User = {
+        id = userId;
+        role = role;
+        name = name;
+        email = normalizedEmail;
+        passwordHash = passwordHash;
+        phoneNumber = phoneNumber;
+        idNumber = idNumber;
+        department = department;
+        barangay = barangay;
+        isActive = true;
+        createdAt = Time.now();
+    };
+
+    users.put(userId, newUser);
+
+    #ok(userId)
+    };
+
 
     public query func getUser(userId: Text): async ?User {
         users.get(userId)
@@ -171,6 +244,82 @@ actor CivicChain {
 
     public query func getPoliceStations(): async [Text] {
         policeStations
+    };
+
+    public func login(email: Text, password: Text, role: UserRole): async Result.Result<User, Text> {
+        // Find user by email or ID number based on role
+        let userOpt = switch (role) {
+            case (#Police) {
+                // For police, try to find by ID number first (MPD-XXXXX)
+                if (Text.startsWith(email, #text("MPD-"))) {
+                    Array.find(Iter.toArray(users.vals()), func(u: User): Bool { 
+                        switch (u.idNumber) {
+                            case (?id) { id == email };
+                            case (null) { false };
+                        }
+                    })
+                } else {
+                    // If not an ID number, search by email
+                    Array.find(Iter.toArray(users.vals()), func(u: User): Bool { u.email == email })
+                }
+            };
+            case (#BarangayOfficial) {
+                // For barangay officials, try to find by ID number first (BRGY-XXXXX)
+                if (Text.startsWith(email, #text("BRGY-"))) {
+                    Array.find(Iter.toArray(users.vals()), func(u: User): Bool { 
+                        switch (u.idNumber) {
+                            case (?id) { id == email };
+                            case (null) { false };
+                        }
+                    })
+                } else {
+                    // If not an ID number, search by email
+                    Array.find(Iter.toArray(users.vals()), func(u: User): Bool { u.email == email })
+                }
+            };
+            case (_) {
+                // For citizens, only search by email
+                Array.find(Iter.toArray(users.vals()), func(u: User): Bool { u.email == email })
+            };
+        };
+        
+        switch (userOpt) {
+            case (null) {
+                #err("User not found")
+            };
+            case (?user) {
+                // Check if password matches
+                let passwordHash = hashPassword(password);
+                if (user.passwordHash != passwordHash) {
+                    return #err("Invalid password");
+                };
+                
+                // Check if role matches
+                if (user.role == role) {
+                    // Create a response without sending the password hash
+                    let safeUser = {
+                        id = user.id;
+                        role = user.role;
+                        name = user.name;
+                        email = user.email;
+                        passwordHash = ""; // Don't send the hash to client
+                        phoneNumber = user.phoneNumber;
+                        idNumber = user.idNumber;
+                        department = user.department;
+                        barangay = user.barangay;
+                        isActive = user.isActive;
+                        createdAt = user.createdAt;
+                    };
+                    #ok(safeUser)
+                } else {
+                    #err("Invalid role")
+                }
+            };
+        }
+    };
+
+    public func logoutUser(): async Result.Result<(), Text> {
+        #ok(())
     };
 
     // Report Management
@@ -205,7 +354,7 @@ actor CivicChain {
         #ok(reportId)
     };
 
-    public func updateReportStatus(reportId: Text, newStatus: ReportStatus, updatedBy: Text): async Result.Result<(), Text> {
+    public func updateReportStatus(reportId: Text, newStatus: ReportStatus, _updatedBy: Text): async Result.Result<(), Text> {
         switch (reports.get(reportId)) {
             case null { #err("Report not found") };
             case (?report) {
@@ -220,7 +369,7 @@ actor CivicChain {
         }
     };
 
-    public func assignReport(reportId: Text, assignedTo: Text, assignedBy: Text): async Result.Result<(), Text> {
+    public func assignReport(reportId: Text, assignedTo: Text, _assignedBy: Text): async Result.Result<(), Text> {
         switch (reports.get(reportId)) {
             case null { #err("Report not found") };
             case (?report) {
@@ -391,5 +540,115 @@ actor CivicChain {
             totalProposals = proposals.size();
             totalAnnouncements = announcements.size();
         }
+    };
+
+    // Initialize test users
+    public func initializeTestUsers() : async () {
+        // Citizens
+        ignore await registerUser(
+            "John Doe",
+            "john.doe@gmail.com",
+            "password123",
+            #Citizen,
+            null,
+            null,
+            "09123456789",
+            null
+        );
+
+        ignore await registerUser(
+            "Jane Smith",
+            "jane.smith@gmail.com",
+            "password123",
+            #Citizen,
+            null,
+            null,
+            "09234567890",
+            null
+        );
+
+        // Police Officials
+        ignore await registerUser(
+            "Mike Johnson",
+            "mike.johnson@manilapd.gov.ph",
+            "password123",
+            #Police,
+            ?"Manila Police District - Station 1 (Intramuros)",
+            null,
+            "09345678901",
+            ?"MPD-12345"
+        );
+
+        ignore await registerUser(
+            "Sarah Williams",
+            "sarah.williams@manilapd.gov.ph",
+            "password123",
+            #Police,
+            ?"Manila Police District - Station 2 (Ermita)",
+            null,
+            "09456789012",
+            ?"MPD-12346"
+        );
+
+        // Barangay Officials
+        ignore await registerUser(
+            "Maria Santos",
+            "maria.santos@barangay.gov.ph",
+            "password123",
+            #BarangayOfficial,
+            null,
+            ?"Ermita",
+            "09567890123",
+            ?"BRGY-12345"
+        );
+
+        ignore await registerUser(
+            "Pedro Cruz",
+            "pedro.cruz@barangay.gov.ph",
+            "password123",
+            #BarangayOfficial,
+            null,
+            ?"Intramuros",
+            "09678901234",
+            ?"BRGY-12346"
+        );
+
+        // Department Heads
+        ignore await registerUser(
+            "Robert Garcia",
+            "robert.garcia@manilapd.gov.ph",
+            "password123",
+            #HeadPolice,
+            ?"Manila Police District - Station 1 (Intramuros)",
+            null,
+            "09789012345",
+            ?"MPD-12347"
+        );
+
+        ignore await registerUser(
+            "Elena Reyes",
+            "elena.reyes@barangay.gov.ph",
+            "password123",
+            #HeadBarangay,
+            null,
+            ?"Ermita",
+            "09890123456",
+            ?"BRGY-12347"
+        );
+    };
+
+    // Call initializeTestUsers when the canister is deployed
+    system func preupgrade() {
+        // This runs before the canister code is upgraded
+    };
+
+    system func postupgrade() {
+        // Cannot call async functions directly from system functions
+        // We'll expose a public function that clients can call to initialize test users
+    };
+
+    // Initial setup - client needs to call this after deployment
+    public func setup() : async () {
+        await initializeTestUsers();
     };
 }

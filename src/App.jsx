@@ -1,212 +1,186 @@
-import React from 'react';
-import { Routes, Route, Navigate } from 'react-router-dom';
-import { AuthProvider, useAuth } from './hooks/useAuth.jsx';
+"use client"
+import React, { Suspense } from 'react';
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { AuthProvider, useAuth } from './contexts/AuthContext';
 import Layout from './components/Layout';
-import Login from './pages/Login';
+import Home from './pages/Home';
 import Dashboard from './pages/Dashboard';
 import Reports from './pages/Reports';
 import SubmitReport from './pages/SubmitReport';
 import Proposals from './pages/Proposals';
 import Announcements from './pages/Announcements';
 import Analytics from './pages/Analytics';
+import Settings from './pages/Settings';
+import BarangayReports from './pages/BarangayReports';
+import ManageOfficials from './pages/ManageOfficials';
+import CreateProposal from './pages/CreateProposal';
+import CreateAnnouncement from './pages/CreateAnnouncement';
+import Profile from './pages/Profile';
+import LoadingSpinner from './components/LoadingSpinner';
 
-// Protected Route Component
-const ProtectedRoute = ({ children, allowedRoles = [] }) => {
+// Error boundary component
+class ErrorBoundary extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+
+  static getDerivedStateFromError(error) {
+    return { hasError: true, error };
+  }
+
+  componentDidCatch(error, errorInfo) {
+    console.error('Error caught by boundary:', error, errorInfo);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-blue-900 to-indigo-900">
+          <div className="text-center p-8 bg-white/10 backdrop-blur-lg rounded-lg shadow-xl">
+            <h2 className="text-2xl font-bold text-white mb-4">Something went wrong</h2>
+            <p className="text-white/80 mb-6">{this.state.error?.message || 'An unexpected error occurred'}</p>
+            <button
+              onClick={() => {
+                localStorage.removeItem('civicchain_user');
+                window.location.reload();
+              }}
+              className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            >
+              Reload Page
+            </button>
+          </div>
+        </div>
+      );
+    }
+
+    return this.props.children;
+  }
+}
+
+// Protected route component
+const ProtectedRoute = ({ children }) => {
   const { user, loading } = useAuth();
 
   if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-civic-blue"></div>
-      </div>
-    );
+    return <LoadingSpinner />;
   }
 
   if (!user) {
-    return <Navigate to="/" replace />;
+    return <Navigate to="/" />;
   }
 
-  if (allowedRoles.length > 0 && !allowedRoles.includes(user.role)) {
-    return <Navigate to="/dashboard" replace />;
-  }
-
-  return children;
+  return <Layout>{children}</Layout>;
 };
 
 // App Routes Component
 const AppRoutes = () => {
-  const { user } = useAuth();
+  const { isInitialized } = useAuth();
+
+  if (!isInitialized) {
+    return <LoadingSpinner />;
+  }
 
   return (
     <Routes>
-      <Route 
-        path="/" 
-        element={user ? <Navigate to="/dashboard" replace /> : <Login />} 
-      />
-      
+      {/* Public route: Home handles all login/register UI */}
+      <Route path="/" element={<Home />} />
+
+      {/* Protected routes */}
       <Route
         path="/dashboard"
         element={
           <ProtectedRoute>
-            <Layout>
-              <Dashboard />
-            </Layout>
+            <Dashboard />
           </ProtectedRoute>
         }
       />
-      
       <Route
-        path="/reports"
+        path="/profile"
         element={
           <ProtectedRoute>
-            <Layout>
-              <Reports />
-            </Layout>
+            <Profile />
           </ProtectedRoute>
         }
       />
-      
       <Route
-        path="/submit-report"
-        element={
-          <ProtectedRoute allowedRoles={['Citizen']}>
-            <Layout>
-              <SubmitReport />
-            </Layout>
-          </ProtectedRoute>
-        }
-      />
-      
-      {/* Placeholder routes for other pages */}
-      <Route
-        path="/proposals"
+        path="/settings"
         element={
           <ProtectedRoute>
-            <Layout>
-              <Proposals />
-            </Layout>
+            <Settings />
           </ProtectedRoute>
         }
       />
-      
+      <Route
+        path="/analytics"
+        element={
+          <ProtectedRoute>
+            <Analytics />
+          </ProtectedRoute>
+        }
+      />
       <Route
         path="/announcements"
         element={
           <ProtectedRoute>
-            <Layout>
-              <Announcements />
-            </Layout>
+            <Announcements />
           </ProtectedRoute>
         }
       />
-      
       <Route
-        path="/assignments"
+        path="/announcements/create"
         element={
-          <ProtectedRoute allowedRoles={['Police', 'HeadPolice']}>
-            <Layout>
-              <div className="card">
-                <h2 className="text-2xl font-bold mb-4">Assignments</h2>
-                <p className="text-gray-600">Assignment management coming soon...</p>
-              </div>
-            </Layout>
+          <ProtectedRoute>
+            <CreateAnnouncement />
           </ProtectedRoute>
         }
       />
-      
       <Route
-        path="/barangay-reports"
+        path="/officials"
         element={
-          <ProtectedRoute allowedRoles={['BarangayOfficial', 'HeadBarangay']}>
-            <Layout>
-              <div className="card">
-                <h2 className="text-2xl font-bold mb-4">Barangay Reports</h2>
-                <p className="text-gray-600">Barangay-specific reports coming soon...</p>
-              </div>
-            </Layout>
+          <ProtectedRoute>
+            <ManageOfficials />
           </ProtectedRoute>
         }
       />
-      
       <Route
-        path="/analytics"
+        path="/proposals"
         element={
-          <ProtectedRoute allowedRoles={['HeadPolice', 'HeadBarangay']}>
-            <Layout>
-              <Analytics />
-            </Layout>
+          <ProtectedRoute>
+            <Proposals />
           </ProtectedRoute>
         }
       />
-      
       <Route
-        path="/create-proposal"
+        path="/proposals/create"
         element={
-          <ProtectedRoute allowedRoles={['HeadBarangay']}>
-            <Layout>
-              <div className="card">
-                <h2 className="text-2xl font-bold mb-4">Create Proposal</h2>
-                <p className="text-gray-600">Proposal creation coming soon...</p>
-              </div>
-            </Layout>
+          <ProtectedRoute>
+            <CreateProposal />
           </ProtectedRoute>
         }
       />
-      
       <Route
-        path="/create-announcement"
+        path="/reports"
         element={
-          <ProtectedRoute allowedRoles={['HeadPolice', 'HeadBarangay']}>
-            <Layout>
-              <div className="card">
-                <h2 className="text-2xl font-bold mb-4">Create Announcement</h2>
-                <p className="text-gray-600">Announcement creation coming soon...</p>
-              </div>
-            </Layout>
+          <ProtectedRoute>
+            <BarangayReports />
           </ProtectedRoute>
         }
       />
-      
-      <Route
-        path="/manage-police"
-        element={
-          <ProtectedRoute allowedRoles={['HeadPolice']}>
-            <Layout>
-              <div className="card">
-                <h2 className="text-2xl font-bold mb-4">Manage Police</h2>
-                <p className="text-gray-600">Police management coming soon...</p>
-              </div>
-            </Layout>
-          </ProtectedRoute>
-        }
-      />
-      
-      <Route
-        path="/manage-officials"
-        element={
-          <ProtectedRoute allowedRoles={['HeadBarangay']}>
-            <Layout>
-              <div className="card">
-                <h2 className="text-2xl font-bold mb-4">Manage Officials</h2>
-                <p className="text-gray-600">Official management coming soon...</p>
-              </div>
-            </Layout>
-          </ProtectedRoute>
-        }
-      />
-      
-      {/* Catch all route */}
-      <Route path="*" element={<Navigate to="/dashboard" replace />} />
     </Routes>
   );
 };
 
-// Main App Component
+// Root App component with providers
 const App = () => {
   return (
-    <AuthProvider>
-      <AppRoutes />
-    </AuthProvider>
+    <ErrorBoundary>
+      <AuthProvider>
+        <Suspense fallback={<LoadingSpinner />}>
+          <AppRoutes />
+        </Suspense>
+      </AuthProvider>
+    </ErrorBoundary>
   );
 };
 
