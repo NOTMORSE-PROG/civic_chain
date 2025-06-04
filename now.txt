@@ -11,6 +11,7 @@ Email: jane.smith@gmail.com
 Password: password123
 Phone: 09234567890
 Role: Citizen
+
 Police Officials:
 Mike Johnson
 Email: mike.johnson@manilapd.gov.ph
@@ -26,6 +27,7 @@ Phone: 09456789012
 ID Number: MPD-12346
 Station: Station 2
 Role: Police
+
 Barangay Officials:
 Maria Santos
 Email: maria.santos@barangay.gov.ph
@@ -63,5 +65,4 @@ rm -rf .dfx
 rm -rf dist
 rm -f canister_ids.json
 dfx start --clean --background
-dfx canister create --all
 dfx deploy

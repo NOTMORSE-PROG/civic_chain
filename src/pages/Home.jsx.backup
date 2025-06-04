@@ -276,8 +276,9 @@ const Home = () => {
 
           if (loginResult.success) {
             // Check user role after successful auto-login
-            if (result.success) { navigate("/dashboard"); }
-            else {
+            if (user && (user.role === "HeadBarangay" || user.role === "HeadPolice")) {
+              navigate("/head-dashboard")
+            } else {
               navigate("/dashboard")
             }
           } else {
