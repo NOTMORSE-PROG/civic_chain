@@ -259,7 +259,7 @@ const Home = () => {
           formData.name,
           formData.email,
           formData.password,
-          formattedRole,
+          selectedRole,
           departments,
           barangays,
           formData.phoneNumber,
@@ -271,7 +271,7 @@ const Home = () => {
           const loginResult = await login(
             selectedRole === "Citizen" ? formData.email : formData.idNumber,
             formData.password,
-            formattedRole
+            selectedRole
           )
 
           if (loginResult.success) {

@@ -39,7 +39,14 @@ export const AuthProvider = ({ children }) => {
     try {
       const storedUser = localStorage.getItem('civicchain_user');
       if (storedUser) {
-        const parsedUser = JSON.parse(storedUser);
+        const parsed = JSON.parse(storedUser);
+
+        // Convert known fields back to BigInt if necessary
+        const parsedUser = {
+          ...parsed,
+          id: parsed.id ? BigInt(parsed.id) : undefined,
+        };
+
         if (parsedUser.id && parsedUser.email && parsedUser.role) {
           setUser(parsedUser);
           console.log('Session restored:', parsedUser);
@@ -72,33 +79,40 @@ export const AuthProvider = ({ children }) => {
       console.log('Registering user...', { name, email, role, phoneNumber, idNumber });
       setError(null);
       const actor = await getActor();
-      
+
       // Format role for backend
       const formattedRole = { [role]: null };
 
-      // Ensure idNumber is null for citizens
-      const finalIdNumber = role === "Citizen" ? null : idNumber;
-      
+      // Format optional fields for Motoko (as ?Text → [] or [value])
+      const finalIdNumber =
+        role === "Citizen" || idNumber.trim() === "" ? [] : [idNumber.trim()];
+
+      const departmentOpt =
+        departments.length > 0 && departments[0].trim() !== "" ? [departments[0].trim()] : [];
+
+      const barangayOpt =
+        barangays.length > 0 && barangays[0].trim() !== "" ? [barangays[0].trim()] : [];
+
       const result = await actor.registerUser(
         name,
         email,
         password,
         formattedRole,
-        departments.length > 0 ? departments[0] : null,
-        barangays.length > 0 ? barangays[0] : null,
+        departmentOpt,
+        barangayOpt,
         phoneNumber,
         finalIdNumber
       );
       
-      if ('Ok' in result) {
-        const userId = result.Ok;
+      if ('ok' in result) {
+        const userId = result.ok;
         console.log('User registered successfully:', userId);
         // Registration successful, but do not log the user in automatically
         // The user should log in separately after registration
-        return { success: true, userId: userId };
-      } else if ('Err' in result) {
-        console.error('Registration failed:', result.Err);
-        return { success: false, error: result.Err || 'Registration failed' };
+        return { success: true, userId };
+      } else if ('err' in result) {
+        console.error('Registration failed:', result.err);
+        return { success: false, error: result.err || 'Registration failed' };
       } else {
          console.error('Registration failed: Unexpected response', result);
          return { success: false, error: 'Registration failed: Unexpected response from server' };
@@ -114,15 +128,21 @@ export const AuthProvider = ({ children }) => {
       setError(null);
       const actor = await getActor();
       const formattedRole = { [role]: null };
-      const result = await actor.login(identifier, password, formattedRole);
+      const result = await actor.login(identifier.toLowerCase(), password, formattedRole);
 
-      if ('Ok' in result) {
-        const userData = result.Ok;
+      if ('ok' in result) {
+        const userData = result.ok;
         setUser(userData);
-        localStorage.setItem('civicchain_user', JSON.stringify(userData));
+        localStorage.setItem(
+          'civicchain_user',
+          JSON.stringify(userData, (_, value) =>
+            typeof value === 'bigint' ? value.toString() : value
+          )
+        );
+
         return { success: true, user: userData };
       } else {
-        const errorMsg = result.Err || 'Invalid credentials';
+        const errorMsg = result.err || 'Invalid credentials';
         setError(errorMsg);
         return { success: false, error: errorMsg };
       }
