@@ -247,75 +247,68 @@ actor CivicChain {
     };
 
     public func login(email: Text, password: Text, role: UserRole): async Result.Result<User, Text> {
-        // Find user by email or ID number based on role
+        let normalizedEmail = Text.toLowercase(email);
+
+        // Find user based on role + normalized identifier
         let userOpt = switch (role) {
             case (#Police) {
-                // For police, try to find by ID number first (MPD-XXXXX)
-                if (Text.startsWith(email, #text("MPD-"))) {
-                    Array.find(Iter.toArray(users.vals()), func(u: User): Bool { 
+                if (Text.startsWith(normalizedEmail, #text("mpd-"))) {
+                    Array.find(Iter.toArray(users.vals()), func(u: User): Bool {
                         switch (u.idNumber) {
-                            case (?id) { id == email };
+                            case (?id) { Text.toLowercase(id) == normalizedEmail and u.role == role };
                             case (null) { false };
                         }
                     })
                 } else {
-                    // If not an ID number, search by email
-                    Array.find(Iter.toArray(users.vals()), func(u: User): Bool { u.email == email })
+                    Array.find(Iter.toArray(users.vals()), func(u: User): Bool {
+                        Text.toLowercase(u.email) == normalizedEmail and u.role == role
+                    })
                 }
             };
             case (#BarangayOfficial) {
-                // For barangay officials, try to find by ID number first (BRGY-XXXXX)
-                if (Text.startsWith(email, #text("BRGY-"))) {
-                    Array.find(Iter.toArray(users.vals()), func(u: User): Bool { 
+                if (Text.startsWith(normalizedEmail, #text("brgy-"))) {
+                    Array.find(Iter.toArray(users.vals()), func(u: User): Bool {
                         switch (u.idNumber) {
-                            case (?id) { id == email };
+                            case (?id) { Text.toLowercase(id) == normalizedEmail and u.role == role };
                             case (null) { false };
                         }
                     })
                 } else {
-                    // If not an ID number, search by email
-                    Array.find(Iter.toArray(users.vals()), func(u: User): Bool { u.email == email })
+                    Array.find(Iter.toArray(users.vals()), func(u: User): Bool {
+                        Text.toLowercase(u.email) == normalizedEmail and u.role == role
+                    })
                 }
             };
             case (_) {
-                // For citizens, only search by email
-                Array.find(Iter.toArray(users.vals()), func(u: User): Bool { u.email == email })
+                Array.find(Iter.toArray(users.vals()), func(u: User): Bool {
+                    Text.toLowercase(u.email) == normalizedEmail and u.role == role
+                })
             };
         };
-        
+
         switch (userOpt) {
-            case (null) {
-                #err("User not found")
-            };
+            case (null) return #err("User not found");
             case (?user) {
-                // Check if password matches
-                let passwordHash = hashPassword(password);
-                if (user.passwordHash != passwordHash) {
+                if (user.passwordHash != hashPassword(password)) {
                     return #err("Invalid password");
                 };
-                
-                // Check if role matches
-                if (user.role == role) {
-                    // Create a response without sending the password hash
-                    let safeUser = {
-                        id = user.id;
-                        role = user.role;
-                        name = user.name;
-                        email = user.email;
-                        passwordHash = ""; // Don't send the hash to client
-                        phoneNumber = user.phoneNumber;
-                        idNumber = user.idNumber;
-                        department = user.department;
-                        barangay = user.barangay;
-                        isActive = user.isActive;
-                        createdAt = user.createdAt;
-                    };
-                    #ok(safeUser)
-                } else {
-                    #err("Invalid role")
-                }
-            };
-        }
+
+                let safeUser = {
+                    id = user.id;
+                    role = user.role;
+                    name = user.name;
+                    email = user.email;
+                    passwordHash = ""; // hide password hash
+                    phoneNumber = user.phoneNumber;
+                    idNumber = user.idNumber;
+                    department = user.department;
+                    barangay = user.barangay;
+                    isActive = user.isActive;
+                    createdAt = user.createdAt;
+                };
+                return #ok(safeUser);
+            }
+        };
     };
 
     public func logoutUser(): async Result.Result<(), Text> {

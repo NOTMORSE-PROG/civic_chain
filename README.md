@@ -5,12 +5,12 @@ A decentralized civic coordination, transparency, and reporting system for Manil
 ## 🚀 Deployment Information
 
 ### Canister IDs
-- **Backend Canister**: `bkyz2-fmaaa-aaaaa-qaaaq-cai`
-- **Frontend Canister**: `bd3sg-teaaa-aaaaa-qaaba-cai`
+- **Backend Canister**: `uxrrr-q7777-77774-qaaaq-cai`
+- **Frontend Canister**: `u6s2n-gx777-77774-qaaba-cai`
 
 ### Live URLs
-- **Frontend Application**: http://127.0.0.1:4943/?canisterId=bd3sg-teaaa-aaaaa-qaaba-cai
-- **Backend Candid Interface**: http://127.0.0.1:4943/?canisterId=be2us-64aaa-aaaaa-qaabq-cai&id=bkyz2-fmaaa-aaaaa-qaaaq-cai
+- **Frontend Application**: http://127.0.0.1:4943/?canisterId=u6s2n-gx777-77774-qaaba-cai
+- **Backend Candid Interface**: http://127.0.0.1:4943/?canisterId=uzt4z-lp777-77774-qaabq-cai&id=uxrrr-q7777-77774-qaaaq-cai
 - **Development Server**: https://work-1-xjeokbreievqvdym.prod-runtime.all-hands.dev
 
 ### ✅ Deployment Status
