@@ -14,7 +14,7 @@ A decentralized civic coordination, transparency, and reporting system for Manil
 - **Development Server**: https://work-1-xjeokbreievqvdym.prod-runtime.all-hands.dev
 
 ### ✅ Deployment Status
-- **Google Maps API**: ✅ Configured and working (AIzaSyBPrGpYHnJtj4t1S2ioiDKZ98NRG4_IdcM)
+- **Google Maps API**: ✅ Configured through environment variables
 - **Backend Connection**: ✅ Verified and functional
 - **Frontend Build**: ✅ Successfully deployed to canister
 - **Manila Data**: ✅ 36 Barangays and 12 Police Stations loaded
