@@ -39,9 +39,16 @@ const GoogleMap = ({
         return
       }
 
-      // Load Google Maps script
+      // Load Google Maps script from environment configuration
+      const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY
+      if (!apiKey) {
+        setError("Google Maps is not configured.")
+        setLoading(false)
+        return
+      }
+
       const script = document.createElement("script")
-      script.src = `https://maps.googleapis.com/maps/api/js?key=AIzaSyBFw0Qbyq9zTFTd-tUY6dO_BcqzKOqiOEo&libraries=places`
+      script.src = `https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(apiKey)}&libraries=places`
       script.async = true
       script.defer = true
       script.onload = initializeMap
